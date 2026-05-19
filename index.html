@@ -647,7 +647,7 @@ svg.chart text{font-family:'IBM Plex Mono',monospace;}
     </div>
 
     <!-- ══ IMPORT PAGE ══ -->
-<div class="page" id="page-import" style="display:none !important;">
+<div class="page" id="page-import" style="visibility:hidden;height:0;overflow:hidden;">
   <div class="import-page">
 
     <!-- Step 1: URL input -->
@@ -2628,5 +2628,56 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+  try {
+    // Force analytics page
+    if (typeof switchPage === 'function') {
+      switchPage('analytics');
+    }
+
+    // Try to restore previous Google Sheet connection automatically
+    const savedSheetUrl =
+      localStorage.getItem('googleSheetUrl') ||
+      localStorage.getItem('sheetUrl') ||
+      localStorage.getItem('sheetURL');
+
+    if (savedSheetUrl) {
+      const urlInput = document.getElementById('imp-url');
+
+      if (urlInput) {
+        urlInput.value = savedSheetUrl;
+      }
+
+      // Re-fetch metadata and reload analytics
+      if (typeof fetchSheetMeta === 'function') {
+        await fetchSheetMeta();
+      }
+
+      // Small delay to allow tabs/data init
+      setTimeout(async () => {
+        try {
+          if (typeof fetchTabData === 'function') {
+            await fetchTabData();
+          }
+
+          if (typeof reloadFromSheet === 'function') {
+            await reloadFromSheet();
+          }
+        } catch(e) {
+          console.log('Reload error:', e);
+        }
+      }, 1200);
+    } else {
+      console.log('No saved Google Sheet URL found in localStorage');
+    }
+  } catch(e) {
+    console.log('Auto reconnect failed:', e);
+  }
+});
+</script>
+
 </body>
 </html>
+
