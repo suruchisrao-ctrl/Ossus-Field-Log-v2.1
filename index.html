@@ -327,17 +327,12 @@ svg.chart text{font-family:'IBM Plex Mono',monospace;}
 .kpi-delta.up{color:#2d7a4a;}
 .kpi-delta.dn{color:#8a2d2d;}
 
-/* Simplified mode: Google Sheets backend only */
-#page-log,
-#page-import,
-#ptab-log,
-#ptab-import,
-.btn-primary[onclick="submitEntry()"],
-.sidebar,
-.layout,
-.ctx-card,
-.sec-card,
-.action-row {
+/* Minimal patch: hide logging UI only */
+#ptab-log{
+  display:none !important;
+}
+
+#page-log{
   display:none !important;
 }
 
@@ -369,19 +364,19 @@ svg.chart text{font-family:'IBM Plex Mono',monospace;}
 
 <!-- PAGE TABS -->
 <nav class="page-tabs">
-  <div class="ptab" id="ptab-log" onclick="switchPage('log')" style="display:none;">
+  <div class="ptab active" id="ptab-log" onclick="switchPage('log')" style="display:none;">
     Log <span class="ptab-count" id="ptab-log-count">0</span>
   </div>
   <div class="ptab active" id="ptab-analytics" onclick="switchPage('analytics')">
-    Analytics <span class="ptab-count">2</span>
+    Analytics <span class="ptab-count">3</span>
   </div>
-  <div class="ptab" id="ptab-import" onclick="switchPage('import')" style="display:none;">
+  <div class="ptab" id="ptab-import" onclick="switchPage('import')">
     Import <span class="ptab-count" id="ptab-import-count">0</span>
   </div>
 </nav>
 
 <!-- ══ LOG PAGE ══ -->
-<div class="page" id="page-log" style="display:none !important;">
+<div class="page" id="page-log" style="display:none;">
   <div class="layout">
     <aside class="sidebar">
       <div class="sb-top">
@@ -517,20 +512,6 @@ svg.chart text{font-family:'IBM Plex Mono',monospace;}
 <!-- ══ ANALYTICS PAGE ══ -->
 <div class="page active" id="page-analytics">
   <div class="analytics-page">
-<div style="background:#fff3cd;border:1px solid #ffe69c;color:#664d03;padding:12px 18px;border-radius:8px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;">
-DEBUG MODE ACTIVE · Reload patched
-</div>
-
-
-<div style="background:var(--sand-1);border:1px solid var(--sand-3);border-radius:10px;padding:18px 22px;margin-bottom:6px;">
-  <div style="font-family:var(--sans);font-size:15px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink);margin-bottom:6px;">
-    Google Sheets Backend Mode
-  </div>
-  <div style="font-family:var(--mono);font-size:11px;color:var(--ink-3);line-height:1.8;">
-    Manual logging and local browser storage have been disabled. Analytics now depend only on Google Sheets data and reloads.
-  </div>
-</div>
-
 
     <!-- Export toolbar -->
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:4px;">
@@ -650,8 +631,67 @@ DEBUG MODE ACTIVE · Reload patched
       </div>
     </div>
 
-    <!-- ══ IMPORT PAGE ══ -->
-<div class="page" id="page-import" style="visibility:hidden;height:0;overflow:hidden;">
+    <!-- CHART 3: Run summary -->
+    <div class="chart-section">
+      <div class="cs-header">
+        <div class="cs-title-group">
+          <span class="cs-num">03</span>
+          <div>
+            <div class="cs-title">Run summary</div>
+            <div class="cs-sub">Total H₂ per run · Faradaic efficiency overlay</div>
+          </div>
+        </div>
+        <div class="cs-controls">
+          <select class="ctrl-select" id="bar-reactor-a" onchange="renderBarChart()">
+            <option value="">— reactor A</option>
+          </select>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--ink-4);">vs</span>
+          <select class="ctrl-select" id="bar-reactor-b" onchange="renderBarChart()">
+            <option value="">— reactor B</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-body">
+        <div class="legend" id="bar-legend" style="margin-bottom:16px;"></div>
+        <div class="chart-wrap" style="position:relative;height:260px;">
+          <canvas id="bar-chart" style="width:100%;max-height:260px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHART 4: Scatter -->
+    <div class="chart-section">
+      <div class="cs-header">
+        <div class="cs-title-group">
+          <span class="cs-num">04</span>
+          <div>
+            <div class="cs-title">Performance scatter</div>
+            <div class="cs-sub">Select timepoint · each point = one run · FE interval vs FE cumulative</div>
+          </div>
+        </div>
+        <div class="cs-controls">
+          <select class="ctrl-select" id="sc-tp" onchange="buildScatterTP();renderScatter()">
+            <option value="">— select timepoint</option>
+          </select>
+          <select class="ctrl-select" id="sc-reactor" onchange="renderScatter()">
+            <option value="ALL">All reactors</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-body">
+        <div class="legend" id="sc-legend" style="margin-bottom:16px;"></div>
+        <div class="chart-wrap" style="position:relative;height:300px;">
+          <canvas id="sc-chart" style="width:100%;max-height:300px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══ IMPORT PAGE ══ -->
+<div class="page" id="page-import">
   <div class="import-page">
 
     <!-- Step 1: URL input -->
@@ -1227,7 +1267,7 @@ function renderDayComparison() {
 }
 
 // ── CHART 3: BAR — RUN SUMMARY ──
-function {
+function renderBarChart(){
   const elA=document.getElementById('bar-reactor-a');
   const elB=document.getElementById('bar-reactor-b');
   if(!elA||!elB){emptyChart('bar-chart','Select a reactor');return;}
@@ -1282,7 +1322,7 @@ function {
 
 // ── CHART 4: SCATTER — FE interval vs FE cumulative per timepoint ──
 
-function  {
+function buildScatterTP() {
   // Populate timepoint dropdown from all entries
   const tps = [...new Set(S.entries.filter(e=>!e.deleted).map(e=>e.timepoint).filter(Boolean))]
     .sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric:true}));
@@ -1324,7 +1364,7 @@ function computeFECumulative(entries, upToTP) {
   return Math.min(+fe.toFixed(2), 100);
 }
 
-function  {
+function renderScatter() {
   const tp       = document.getElementById('sc-tp')?.value;
   const reactorF = document.getElementById('sc-reactor')?.value || 'ALL';
 
@@ -1546,8 +1586,8 @@ function switchPage(p) {
       buildDayFilter();
       renderDayComparison();
       renderChips();
-      
-      
+      renderBarChart();
+      buildScatterTP();
       // Also populate sc-reactor dropdown
       const scReactorEl = document.getElementById('sc-reactor');
       if (scReactorEl) {
@@ -1557,7 +1597,7 @@ function switchPage(p) {
           rwd.map(r=>`<option value="${r}">${RC_NAMES[r]||r}</option>`).join('');
         if (rwd.includes(prev)) scReactorEl.value = prev;
       }
-      
+      renderScatter();
     }, 150);
   }
 }
@@ -1844,7 +1884,7 @@ window.addEventListener('load', () => {
   updateLiveStrip();
   // Connection happens after PIN entry
   // Charts render empty until user selects reactors — no seed data
-  setTimeout(()=>{ renderTimeSeries();   }, 100);
+  setTimeout(()=>{ renderTimeSeries(); renderBarChart(); renderScatter(); }, 100);
 });
 
 // ══ IMPORT MODULE ══
@@ -2498,7 +2538,7 @@ async function reloadFromSheet() {
   // Re-render analytics if on that tab
   if (document.getElementById('page-analytics')?.classList.contains('active')) {
     updateKPIs();
-    setTimeout(() => { renderTimeSeries(); renderDayComparison();  }, 100);
+    setTimeout(() => { renderTimeSeries(); renderDayComparison(); renderBarChart(); }, 100);
   }
 }
 
@@ -2621,157 +2661,15 @@ document.addEventListener('keydown', e => {
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  try {
-    if (typeof switchPage === 'function') {
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    if(typeof switchPage === 'function'){
       switchPage('analytics');
     }
-  } catch(e) {
+  }catch(e){
     console.log(e);
   }
 });
-</script>
-
-
-<script>
-document.addEventListener('DOMContentLoaded', async function () {
-  try {
-    // Force analytics page
-    if (typeof switchPage === 'function') {
-      switchPage('analytics');
-    }
-
-    // Try to restore previous Google Sheet connection automatically
-    const savedSheetUrl =
-      localStorage.getItem('googleSheetUrl') ||
-      localStorage.getItem('sheetUrl') ||
-      localStorage.getItem('sheetURL');
-
-    if (savedSheetUrl) {
-      const urlInput = document.getElementById('imp-url');
-
-      if (urlInput) {
-        urlInput.value = savedSheetUrl;
-      }
-
-      // Re-fetch metadata and reload analytics
-      if (typeof fetchSheetMeta === 'function') {
-        await fetchSheetMeta();
-      }
-
-      // Small delay to allow tabs/data init
-      setTimeout(async () => {
-        try {
-          if (typeof fetchTabData === 'function') {
-            await fetchTabData();
-          }
-
-          if (typeof reloadFromSheet === 'function') {
-            await reloadFromSheet();
-          }
-        } catch(e) {
-          console.log('Reload error:', e);
-        }
-      }, 1200);
-    } else {
-      console.log('No saved Google Sheet URL found in localStorage');
-    }
-  } catch(e) {
-    console.log('Auto reconnect failed:', e);
-  }
-});
-</script>
-
-
-<script>
-(async function(){
-
-  async function forceReloadSheetData(){
-    try{
-      console.log("FORCE RELOAD START");
-
-      if(typeof reloadFromSheet_original === 'function'){
-        try{
-          await reloadFromSheet_original();
-        }catch(e){
-          console.log("Original reload failed", e);
-        }
-      }
-
-      if(typeof fetchSheetMeta === 'function'){
-        try{
-          await fetchSheetMeta();
-        }catch(e){
-          console.log("fetchSheetMeta failed", e);
-        }
-      }
-
-      if(typeof fetchTabData === 'function'){
-        try{
-          await fetchTabData();
-        }catch(e){
-          console.log("fetchTabData failed", e);
-        }
-      }
-
-      const rerenders = [
-        'renderTimeSeries',
-        'renderDayComparison',
-        'updateKPIs'
-      ];
-
-      rerenders.forEach(fn => {
-        try{
-          if(typeof window[fn] === 'function'){
-            window[fn]();
-          }
-        }catch(e){
-          console.log("Render error", fn, e);
-        }
-      });
-
-      console.log("FORCE RELOAD DONE");
-
-    }catch(e){
-      console.log("FORCE RELOAD FAILED", e);
-    }
-  }
-
-  if(typeof reloadFromSheet === 'function'){
-    window.reloadFromSheet_original = reloadFromSheet;
-  }
-
-  window.reloadFromSheet = forceReloadSheetData;
-
-  document.addEventListener('DOMContentLoaded', function(){
-
-    const btns = document.querySelectorAll('button');
-
-    btns.forEach(btn=>{
-      if(btn.innerText && btn.innerText.includes('Reload')){
-        btn.onclick = async function(){
-          const old = btn.innerText;
-          btn.innerText = 'Reloading...';
-
-          try{
-            await forceReloadSheetData();
-            btn.innerText = 'Reloaded';
-          }catch(e){
-            btn.innerText = 'Failed';
-          }
-
-          setTimeout(()=>{
-            btn.innerText = old;
-          },1500);
-        };
-      }
-    });
-
-    setTimeout(forceReloadSheetData, 1200);
-
-  });
-
-})();
 </script>
 
 </body>
