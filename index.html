@@ -510,24 +510,6 @@ svg.chart text{font-family:'IBM Plex Mono',monospace;}
 </div>
 
 <!-- ══ ANALYTICS PAGE ══ -->
-
-<div id="backend-update-banner" style="
-position:sticky;
-top:104px;
-z-index:180;
-background:rgba(28,23,18,0.92);
-color:#f5ede0;
-padding:10px 36px;
-font-family:'IBM Plex Mono', monospace;
-font-size:10px;
-letter-spacing:0.12em;
-text-transform:uppercase;
-border-bottom:1px solid rgba(245,237,224,0.08);
-backdrop-filter:blur(12px);
-">
-Backend Last Updated · Checking...
-</div>
-
 <div class="page active" id="page-analytics">
   <div class="analytics-page">
 
@@ -2688,82 +2670,6 @@ document.addEventListener('DOMContentLoaded', function(){
     console.log(e);
   }
 });
-</script>
-
-
-<script>
-function updateBackendTimestampBanner() {
-  try {
-    const el = document.getElementById('backend-update-banner');
-    if (!el) return;
-
-    let latest = null;
-
-    // Try common global arrays
-    const candidateArrays = [
-      window.rows,
-      window.sheetRows,
-      window.rawRows,
-      window.importedRows,
-      window.dataRows,
-      window.analyticsRows
-    ];
-
-    for (const arr of candidateArrays) {
-      if (!Array.isArray(arr)) continue;
-
-      for (const row of arr) {
-        if (!row) continue;
-
-        for (const key in row) {
-          const val = row[key];
-
-          if (typeof val === 'string') {
-            const parsed = new Date(val);
-
-            if (!isNaN(parsed)) {
-              if (!latest || parsed > latest) {
-                latest = parsed;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // fallback to page modified time
-    if (!latest || isNaN(latest)) {
-      latest = new Date(document.lastModified);
-    }
-
-    const formatted = latest.toLocaleString();
-
-    el.innerHTML = 'Backend Last Updated · ' + formatted;
-
-  } catch(e) {
-    console.log('Timestamp banner error', e);
-  }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(updateBackendTimestampBanner, 1500);
-
-  // Refresh banner periodically
-  setInterval(updateBackendTimestampBanner, 30000);
-});
-
-// Hook into reload
-if (typeof reloadFromSheet === 'function') {
-  const originalReload = reloadFromSheet;
-
-  window.reloadFromSheet = async function(...args) {
-    const result = await originalReload.apply(this, args);
-
-    setTimeout(updateBackendTimestampBanner, 600);
-
-    return result;
-  };
-}
 </script>
 
 </body>
