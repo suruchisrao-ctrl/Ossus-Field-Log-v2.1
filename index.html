@@ -517,6 +517,10 @@ svg.chart text{font-family:'IBM Plex Mono',monospace;}
 <!-- ══ ANALYTICS PAGE ══ -->
 <div class="page active" id="page-analytics">
   <div class="analytics-page">
+<div style="background:#fff3cd;border:1px solid #ffe69c;color:#664d03;padding:12px 18px;border-radius:8px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;">
+DEBUG MODE ACTIVE · Reload patched
+</div>
+
 
 <div style="background:var(--sand-1);border:1px solid var(--sand-3);border-radius:10px;padding:18px 22px;margin-bottom:6px;">
   <div style="font-family:var(--sans);font-size:15px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink);margin-bottom:6px;">
@@ -2676,6 +2680,98 @@ document.addEventListener('DOMContentLoaded', async function () {
     console.log('Auto reconnect failed:', e);
   }
 });
+</script>
+
+
+<script>
+(async function(){
+
+  async function forceReloadSheetData(){
+    try{
+      console.log("FORCE RELOAD START");
+
+      if(typeof reloadFromSheet_original === 'function'){
+        try{
+          await reloadFromSheet_original();
+        }catch(e){
+          console.log("Original reload failed", e);
+        }
+      }
+
+      if(typeof fetchSheetMeta === 'function'){
+        try{
+          await fetchSheetMeta();
+        }catch(e){
+          console.log("fetchSheetMeta failed", e);
+        }
+      }
+
+      if(typeof fetchTabData === 'function'){
+        try{
+          await fetchTabData();
+        }catch(e){
+          console.log("fetchTabData failed", e);
+        }
+      }
+
+      const rerenders = [
+        'renderTimeSeries',
+        'renderDayComparison',
+        'updateKPIs'
+      ];
+
+      rerenders.forEach(fn => {
+        try{
+          if(typeof window[fn] === 'function'){
+            window[fn]();
+          }
+        }catch(e){
+          console.log("Render error", fn, e);
+        }
+      });
+
+      console.log("FORCE RELOAD DONE");
+
+    }catch(e){
+      console.log("FORCE RELOAD FAILED", e);
+    }
+  }
+
+  if(typeof reloadFromSheet === 'function'){
+    window.reloadFromSheet_original = reloadFromSheet;
+  }
+
+  window.reloadFromSheet = forceReloadSheetData;
+
+  document.addEventListener('DOMContentLoaded', function(){
+
+    const btns = document.querySelectorAll('button');
+
+    btns.forEach(btn=>{
+      if(btn.innerText && btn.innerText.includes('Reload')){
+        btn.onclick = async function(){
+          const old = btn.innerText;
+          btn.innerText = 'Reloading...';
+
+          try{
+            await forceReloadSheetData();
+            btn.innerText = 'Reloaded';
+          }catch(e){
+            btn.innerText = 'Failed';
+          }
+
+          setTimeout(()=>{
+            btn.innerText = old;
+          },1500);
+        };
+      }
+    });
+
+    setTimeout(forceReloadSheetData, 1200);
+
+  });
+
+})();
 </script>
 
 </body>
